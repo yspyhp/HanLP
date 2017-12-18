@@ -409,6 +409,20 @@ public class IOUtil
         BufferedReader bw;
         String line;
 
+        public LineIterator(BufferedReader bw)
+        {
+            this.bw = bw;
+            try
+            {
+                line = bw.readLine();
+            }
+            catch (IOException e)
+            {
+                logger.warning("在读取过程中发生错误" + TextUtility.exceptionToString(e));
+                bw = null;
+            }
+        }
+
         public LineIterator(String path)
         {
             try
@@ -637,5 +651,16 @@ public class IOUtil
         {
             TextUtility.writeString(nature.toString(), out);
         }
+    }
+
+    /**
+     * 本地文件是否存在
+     * @param path
+     * @return
+     */
+    public static boolean isFileExisted(String path)
+    {
+        File file = new File(path);
+        return file.isFile() && file.exists();
     }
 }
