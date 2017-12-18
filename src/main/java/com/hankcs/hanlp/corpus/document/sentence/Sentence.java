@@ -15,17 +15,21 @@ import com.hankcs.hanlp.corpus.document.sentence.word.IWord;
 import com.hankcs.hanlp.corpus.document.sentence.word.WordFactory;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static com.hankcs.hanlp.utility.Predefine.logger;
 /**
- * 句子，指的是以。，：！结尾的句子
+ * 句子，指的是以。！等标点结尾的句子
  * @author hankcs
  */
-public class Sentence implements Serializable
+public class Sentence implements Serializable, Iterable<IWord>
 {
+    /**
+     * 词语列表（复合或简单单词的列表）
+     */
     public List<IWord> wordList;
 
     public Sentence(List<IWord> wordList)
@@ -36,7 +40,7 @@ public class Sentence implements Serializable
     @Override
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(size() * 4);
         int i = 1;
         for (IWord word : wordList)
         {
@@ -47,6 +51,11 @@ public class Sentence implements Serializable
         return sb.toString();
     }
 
+    /**
+     * 以人民日报2014语料格式的字符串创建一个结构化句子
+     * @param param
+     * @return
+     */
     public static Sentence create(String param)
     {
         Pattern pattern = Pattern.compile("(\\[(([^\\s]+/[0-9a-zA-Z]+)\\s+)+?([^\\s]+/[0-9a-zA-Z]+)]/?[0-9a-zA-Z]+)|([^\\s]+/[0-9a-zA-Z]+)");
@@ -65,5 +74,50 @@ public class Sentence implements Serializable
         }
 
         return new Sentence(wordList);
+    }
+
+    /**
+     * 句子中单词（复合词或简单词）的数量
+     * @return
+     */
+    public int size()
+    {
+        return wordList.size();
+    }
+
+    /**
+     * 句子文本长度
+     * @return
+     */
+    public int length()
+    {
+        int length = 0;
+        for (IWord word : this)
+        {
+            length += word.getValue().length();
+        }
+
+        return length;
+    }
+
+    /**
+     * 原始文本形式（无标注，raw text）
+     * @return
+     */
+    public String text()
+    {
+        StringBuilder sb = new StringBuilder(size() * 3);
+        for (IWord word : this)
+        {
+            sb.append(word.getValue());
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public Iterator<IWord> iterator()
+    {
+        return wordList.iterator();
     }
 }
