@@ -21,15 +21,21 @@ import static com.hankcs.hanlp.utility.Predefine.logger;
  */
 public class CoreDictionaryTransformMatrixDictionary
 {
-    public static TransformMatrixDictionary<Nature> transformMatrixDictionary;
+    public static TransformMatrix transformMatrixDictionary;
     static
     {
-        transformMatrixDictionary = new TransformMatrixDictionary<Nature>(Nature.class);
+        transformMatrixDictionary = new TransformMatrix(){
+
+            @Override
+            public int ordinal(String tag)
+            {
+                return Nature.create(tag).ordinal();
+            }
+        };
         long start = System.currentTimeMillis();
         if (!transformMatrixDictionary.load(HanLP.Config.CoreDictionaryTransformMatrixDictionaryPath))
         {
-            logger.severe("加载核心词典词性转移矩阵" + HanLP.Config.CoreDictionaryTransformMatrixDictionaryPath + "失败");
-            System.exit(-1);
+            throw new IllegalArgumentException("加载核心词典词性转移矩阵" + HanLP.Config.CoreDictionaryTransformMatrixDictionaryPath + "失败");
         }
         else
         {

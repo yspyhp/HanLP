@@ -34,7 +34,8 @@ public class ChiSquareFeatureExtractor
     }
 
     /**
-     * 使用卡方非参数校验来执行特征选择
+     * 使用卡方非参数校验来执行特征选择<br>
+     *     https://nlp.stanford.edu/IR-book/html/htmledition/feature-selectionchi2-feature-selection-1.html
      *
      * @param stats
      * @return
@@ -43,7 +44,7 @@ public class ChiSquareFeatureExtractor
     {
         Map<Integer, Double> selectedFeatures = new HashMap<Integer, Double>();
 
-        int N1dot, N0dot, N00, N01, N10, N11;
+        double N1dot, N0dot, N00, N01, N10, N11;
         double chisquareScore;
         Double previousScore;
         for (int feature = 0; feature < stats.featureCategoryJointCount.length; feature++)
@@ -83,6 +84,13 @@ public class ChiSquareFeatureExtractor
                 }
             }
         }
+        if (selectedFeatures.size() == 0) // 当特征全部无法通过卡方检测时，取全集作为特征
+        {
+            for (int feature = 0; feature < stats.featureCategoryJointCount.length; feature++)
+            {
+                selectedFeatures.put(feature, 0.);
+            }
+        }
         if (selectedFeatures.size() > maxSize)
         {
             MaxHeap<Map.Entry<Integer, Double>> maxHeap = new MaxHeap<Map.Entry<Integer, Double>>(maxSize, new Comparator<Map.Entry<Integer, Double>>()
@@ -98,7 +106,7 @@ public class ChiSquareFeatureExtractor
                 maxHeap.add(entry);
             }
             selectedFeatures.clear();
-            for (Map.Entry<Integer, Double> entry : maxHeap.toList())
+            for (Map.Entry<Integer, Double> entry : maxHeap)
             {
                 selectedFeatures.put(entry.getKey(), entry.getValue());
             }

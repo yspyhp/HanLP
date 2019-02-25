@@ -58,7 +58,7 @@ public class NewWordDiscover
         String doc;
         Map<String, WordInfo> word_cands = new TreeMap<String, WordInfo>();
         int totalLength = 0;
-        Pattern delimiter = Pattern.compile("[\\s\\d,.<>/?:;'\"\\[\\]{}()\\|~!@#$%^&*\\-_=+a-zA-Z，。《》、？：；“”‘’｛｝【】（）…￥！—┄－]+");
+        Pattern delimiter = Pattern.compile("[\\s\\d,.<>/?:;'\"\\[\\]{}()\\|~!@#$%^&*\\-_=+，。《》、？：；“”‘’｛｝【】（）…￥！—┄－]+");
         while ((doc = reader.readLine()) != null)
         {
             doc = delimiter.matcher(doc).replaceAll("\0");
@@ -69,6 +69,8 @@ public class NewWordDiscover
                 for (int j = i + 1; j < end; ++j)
                 {
                     String word = doc.substring(i, j);
+                    if (word.indexOf('\0') >= 0)
+                        continue; // 含有分隔符的不认为是词语
                     WordInfo info = word_cands.get(word);
                     if (info == null)
                     {
@@ -90,7 +92,7 @@ public class NewWordDiscover
             info.computeAggregation(word_cands);
         }
         // 过滤
-        ArrayList<WordInfo> wordInfoList = new ArrayList<WordInfo>(word_cands.values());
+        List<WordInfo> wordInfoList = new LinkedList<WordInfo>(word_cands.values());
         ListIterator<WordInfo> listIterator = wordInfoList.listIterator();
         while (listIterator.hasNext())
         {

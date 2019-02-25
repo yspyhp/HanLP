@@ -16,7 +16,6 @@ import com.hankcs.hanlp.collection.trie.DoubleArrayTrie;
 import com.hankcs.hanlp.corpus.io.ByteArray;
 import com.hankcs.hanlp.corpus.io.IOUtil;
 import com.hankcs.hanlp.dictionary.BaseSearcher;
-import com.hankcs.hanlp.dictionary.CoreDictionary;
 import com.hankcs.hanlp.utility.Predefine;
 
 import java.io.*;
@@ -95,7 +94,7 @@ public class JapanesePersonDictionary
     {
         try
         {
-            DataOutputStream out = new DataOutputStream(IOUtil.newOutputStream(path + Predefine.VALUE_EXT));
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(IOUtil.newOutputStream(path + Predefine.VALUE_EXT)));
             out.writeInt(map.size());
             for (Character character : map.values())
             {
@@ -151,9 +150,9 @@ public class JapanesePersonDictionary
         return trie.get(key);
     }
 
-    public static BaseSearcher getSearcher(char[] charArray)
+    public static DoubleArrayTrie<Character>.LongestSearcher getSearcher(char[] charArray)
     {
-        return new Searcher(charArray, trie);
+        return trie.getLongestSearcher(charArray, 0);
     }
 
     /**

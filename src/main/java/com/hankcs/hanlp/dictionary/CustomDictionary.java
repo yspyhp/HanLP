@@ -30,7 +30,8 @@ import java.util.*;
 import static com.hankcs.hanlp.utility.Predefine.logger;
 
 /**
- * 用户自定义词典
+ * 用户自定义词典<br>
+ *     注意自定义词典的动态增删改不是线程安全的。
  *
  * @author He Han
  */
@@ -57,25 +58,32 @@ public class CustomDictionary
         }
     }
 
-    private static boolean loadMainDictionary(String mainPath)
+    /**
+     * 加载词典
+     * @param mainPath 缓存文件文件名
+     * @param path 自定义词典
+     * @param isCache 是否缓存结果
+     */
+    public static boolean loadMainDictionary(String mainPath, String path[], DoubleArrayTrie<CoreDictionary.Attribute> dat, boolean isCache)
     {
         logger.info("自定义词典开始加载:" + mainPath);
-        if (loadDat(mainPath)) return true;
-        dat = new DoubleArrayTrie<CoreDictionary.Attribute>();
+        if (loadDat(mainPath, dat)) return true;
         TreeMap<String, CoreDictionary.Attribute> map = new TreeMap<String, CoreDictionary.Attribute>();
         LinkedHashSet<Nature> customNatureCollector = new LinkedHashSet<Nature>();
         try
         {
-            String path[] = HanLP.Config.CustomDictionaryPath;
+            //String path[] = HanLP.Config.CustomDictionaryPath;
             for (String p : path)
             {
                 Nature defaultNature = Nature.n;
-                int cut = p.indexOf(' ');
+                File file = new File(p);
+                String fileName = file.getName();
+                int cut = fileName.lastIndexOf(' ');
                 if (cut > 0)
                 {
                     // 有默认词性
-                    String nature = p.substring(cut + 1);
-                    p = p.substring(0, cut);
+                    String nature = fileName.substring(cut + 1);
+                    p = file.getParent() + File.separator + fileName.substring(0, cut);
                     try
                     {
                         defaultNature = LexiconUtility.convertStringToNature(nature, customNatureCollector);
@@ -97,25 +105,35 @@ public class CustomDictionary
             }
             logger.info("正在构建DoubleArrayTrie……");
             dat.build(map);
-            // 缓存成dat文件，下次加载会快很多
-            logger.info("正在缓存词典为dat文件……");
-            // 缓存值文件
-            List<CoreDictionary.Attribute> attributeList = new LinkedList<CoreDictionary.Attribute>();
-            for (Map.Entry<String, CoreDictionary.Attribute> entry : map.entrySet())
+            if (isCache)
             {
-                attributeList.add(entry.getValue());
+                // 缓存成dat文件，下次加载会快很多
+                logger.info("正在缓存词典为dat文件……");
+                // 缓存值文件
+                List<CoreDictionary.Attribute> attributeList = new LinkedList<CoreDictionary.Attribute>();
+                for (Map.Entry<String, CoreDictionary.Attribute> entry : map.entrySet())
+                {
+                    attributeList.add(entry.getValue());
+                }
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(IOUtil.newOutputStream(mainPath + Predefine.BIN_EXT)));
+                // 缓存用户词性
+                if (customNatureCollector.isEmpty()) // 热更新
+                {
+                    for (int i = Nature.begin.ordinal() + 1; i < Nature.values().length; ++i)
+                    {
+                        customNatureCollector.add(Nature.values()[i]);
+                    }
+                }
+                IOUtil.writeCustomNature(out, customNatureCollector);
+                // 缓存正文
+                out.writeInt(attributeList.size());
+                for (CoreDictionary.Attribute attribute : attributeList)
+                {
+                    attribute.save(out);
+                }
+                dat.save(out);
+                out.close();
             }
-            DataOutputStream out = new DataOutputStream(IOUtil.newOutputStream(mainPath + Predefine.BIN_EXT));
-            // 缓存用户词性
-            IOUtil.writeCustomNature(out, customNatureCollector);
-            // 缓存正文
-            out.writeInt(attributeList.size());
-            for (CoreDictionary.Attribute attribute : attributeList)
-            {
-                attribute.save(out);
-            }
-            dat.save(out);
-            out.close();
         }
         catch (FileNotFoundException e)
         {
@@ -132,6 +150,11 @@ public class CustomDictionary
             logger.warning("自定义词典" + mainPath + "缓存失败！\n" + TextUtility.exceptionToString(e));
         }
         return true;
+    }
+
+    private static boolean loadMainDictionary(String mainPath)
+    {
+        return loadMainDictionary(mainPath, HanLP.Config.CustomDictionaryPath, CustomDictionary.dat, true);
     }
 
 
@@ -154,8 +177,14 @@ public class CustomDictionary
             }
             BufferedReader br = new BufferedReader(new InputStreamReader(IOUtil.newInputStream(path), "UTF-8"));
             String line;
+            boolean firstLine = true;
             while ((line = br.readLine()) != null)
             {
+                if (firstLine)
+                {
+                    line = IOUtil.removeUTF8BOM(line);
+                    firstLine = false;
+                }
                 String[] param = line.split(splitter);
                 if (param[0].length() == 0) continue;   // 排除空行
                 if (HanLP.Config.Normalization) param[0] = CharTable.convert(param[0]); // 正规化
@@ -285,16 +314,26 @@ public class CustomDictionary
         return insert(word, null);
     }
 
+    public static boolean loadDat(String path, DoubleArrayTrie<CoreDictionary.Attribute> dat)
+    {
+        return loadDat(path, HanLP.Config.CustomDictionaryPath, dat);
+    }
+
     /**
      * 从磁盘加载双数组
      *
-     * @param path
+     * @param path 主词典路径
+     * @param customDicPath 用户词典路径
      * @return
      */
-    static boolean loadDat(String path)
+    public static boolean loadDat(String path, String customDicPath[], DoubleArrayTrie<CoreDictionary.Attribute> dat)
     {
         try
         {
+            if (isDicNeedUpdate(path, customDicPath))
+            {
+                return false;
+            }
             ByteArray byteArray = ByteArray.createByteArray(path + Predefine.BIN_EXT);
             if (byteArray == null) return false;
             int size = byteArray.nextInt();
@@ -329,6 +368,45 @@ public class CustomDictionary
             return false;
         }
         return true;
+    }
+
+    /**
+     * 获取本地词典更新状态
+     * @return true 表示本地词典比缓存文件新，需要删除缓存
+     */
+    private static boolean isDicNeedUpdate(String mainPath, String path[])
+    {
+        if (HanLP.Config.IOAdapter != null &&
+            !HanLP.Config.IOAdapter.getClass().getName().contains("com.hankcs.hanlp.corpus.io.FileIOAdapter"))
+        {
+            return false;
+        }
+        String binPath = mainPath + Predefine.BIN_EXT;
+        File binFile = new File(binPath);
+        if (!binFile.exists())
+        {
+            return true;
+        }
+        long lastModified = binFile.lastModified();
+        //String path[] = HanLP.Config.CustomDictionaryPath;
+        for (String p : path)
+        {
+            File f = new File(p);
+            String fileName = f.getName();
+            int cut = fileName.lastIndexOf(' ');
+            if (cut > 0)
+            {
+                p = f.getParent() + File.separator + fileName.substring(0, cut);
+            }
+            f = new File(p);
+            if (f.exists() && f.lastModified() > lastModified)
+            {
+                IOUtil.deleteFile(binPath); // 删掉缓存
+                logger.info("已清除自定义词典缓存文件！");
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -483,14 +561,7 @@ public class CustomDictionary
     {
         if (trie != null)
         {
-            BaseSearcher searcher = CustomDictionary.getSearcher(text);
-            int offset;
-            Map.Entry<String, CoreDictionary.Attribute> entry;
-            while ((entry = searcher.next()) != null)
-            {
-                offset = searcher.getOffset();
-                processor.hit(offset, offset + entry.getKey().length(), entry.getValue());
-            }
+            trie.parseText(text, processor);
         }
         DoubleArrayTrie<CoreDictionary.Attribute>.Searcher searcher = dat.getSearcher(text, 0);
         while (searcher.next())
@@ -525,6 +596,55 @@ public class CustomDictionary
     }
 
     /**
+     * 最长匹配
+     *
+     * @param text      文本
+     * @param processor 处理器
+     */
+    public static void parseLongestText(String text, AhoCorasickDoubleArrayTrie.IHit<CoreDictionary.Attribute> processor)
+    {
+        if (trie != null)
+        {
+            final int[] lengthArray = new int[text.length()];
+            final CoreDictionary.Attribute[] attributeArray = new CoreDictionary.Attribute[text.length()];
+            char[] charArray = text.toCharArray();
+            DoubleArrayTrie<CoreDictionary.Attribute>.Searcher searcher = dat.getSearcher(charArray, 0);
+            while (searcher.next())
+            {
+                lengthArray[searcher.begin] = searcher.length;
+                attributeArray[searcher.begin] = searcher.value;
+            }
+            trie.parseText(charArray, new AhoCorasickDoubleArrayTrie.IHit<CoreDictionary.Attribute>()
+            {
+                @Override
+                public void hit(int begin, int end, CoreDictionary.Attribute value)
+                {
+                    int length = end - begin;
+                    if (length > lengthArray[begin])
+                    {
+                        lengthArray[begin] = length;
+                        attributeArray[begin] = value;
+                    }
+                }
+            });
+            for (int i = 0; i < charArray.length;)
+            {
+                if (lengthArray[i] == 0)
+                {
+                    ++i;
+                }
+                else
+                {
+                    processor.hit(i, i + lengthArray[i], attributeArray[i]);
+                    i += lengthArray[i];
+                }
+            }
+        }
+        else
+            dat.parseLongestText(text, processor);
+    }
+
+    /**
      * 热更新（重新加载）<br>
      * 集群环境（或其他IOAdapter）需要自行删除缓存文件（路径 = HanLP.Config.CustomDictionaryPath[0] + Predefine.BIN_EXT）
      * @return 是否加载成功
@@ -534,6 +654,7 @@ public class CustomDictionary
         String path[] = HanLP.Config.CustomDictionaryPath;
         if (path == null || path.length == 0) return false;
         IOUtil.deleteFile(path[0] + Predefine.BIN_EXT); // 删掉缓存
+        dat = new DoubleArrayTrie<CoreDictionary.Attribute>();
         return loadMainDictionary(path[0]);
     }
 }

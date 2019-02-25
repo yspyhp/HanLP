@@ -1,6 +1,6 @@
 package com.hankcs.hanlp.classification.classifiers;
 
-import com.hankcs.hanlp.classification.utilities.MathUtility;
+import com.hankcs.hanlp.utility.MathUtility;
 import com.hankcs.hanlp.collection.trie.bintrie.BinTrie;
 import com.hankcs.hanlp.classification.corpus.*;
 import com.hankcs.hanlp.classification.features.ChiSquareFeatureExtractor;
@@ -8,7 +8,7 @@ import com.hankcs.hanlp.classification.features.BaseFeatureData;
 import com.hankcs.hanlp.classification.models.AbstractModel;
 import com.hankcs.hanlp.classification.models.NaiveBayesModel;
 
-import static com.hankcs.hanlp.classification.utilities.Predefine.logger;
+import static com.hankcs.hanlp.classification.utilities.io.ConsoleLogger.logger;
 
 import java.util.*;
 

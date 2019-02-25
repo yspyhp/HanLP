@@ -24,6 +24,7 @@ import java.util.LinkedList;
  *
  * @author hankcs
  */
+//  * @deprecated 已废弃，请使用功能更丰富、设计更优雅的{@link com.hankcs.hanlp.model.crf.CRFLexicalAnalyzer}。
 public final class CRFSegmentModel extends CRFModel
 {
     private int idM;
@@ -98,6 +99,7 @@ public final class CRFSegmentModel extends CRFModel
         net[0][idE] = -1000.0;
         int[][] from = new int[size][4];
         double[][] maxScoreAt = new double[2][4]; // 滚动数组
+        System.arraycopy(net[0], 0, maxScoreAt[0], 0, 4); // 初始preI=0,  maxScoreAt[preI][pre] = net[0][pre]
         int curI = 0;
         for (int i = 1; i < size; ++i)
         {

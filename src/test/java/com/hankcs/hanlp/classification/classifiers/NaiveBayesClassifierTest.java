@@ -15,6 +15,11 @@ public class NaiveBayesClassifierTest extends TestCase
     private static final String MODEL_PATH = "data/test/classification.ser";
     private Map<String, String[]> trainingDataSet;
 
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+    }
 
     private void loadDataSet()
     {
@@ -50,7 +55,7 @@ public class NaiveBayesClassifierTest extends TestCase
         }
         NaiveBayesClassifier naiveBayesClassifier = new NaiveBayesClassifier(model);
         // 预测单个文档
-        String path = CORPUS_FOLDER + "/财经/12.txt";
+        String path = CORPUS_FOLDER + "/体育/0004.txt";
         String text = IOUtil.readTxt(path);
         String label = naiveBayesClassifier.classify(text);
         String title = text.split("\\n")[0].replaceAll("\\s", "");

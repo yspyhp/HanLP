@@ -16,13 +16,13 @@ import com.hankcs.hanlp.classification.corpus.IDataSet;
 import com.hankcs.hanlp.classification.corpus.MemoryDataSet;
 import com.hankcs.hanlp.classification.models.AbstractModel;
 import com.hankcs.hanlp.classification.utilities.CollectionUtility;
-import com.hankcs.hanlp.classification.utilities.MathUtility;
+import com.hankcs.hanlp.utility.MathUtility;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static com.hankcs.hanlp.classification.utilities.Predefine.logger;
+import static com.hankcs.hanlp.classification.utilities.io.ConsoleLogger.logger;
 
 /**
  * @author hankcs

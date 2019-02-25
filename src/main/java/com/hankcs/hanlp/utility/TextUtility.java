@@ -1,54 +1,22 @@
 package com.hankcs.hanlp.utility;
 
 
+import com.hankcs.hanlp.corpus.document.sentence.Sentence;
+import com.hankcs.hanlp.corpus.document.sentence.word.IWord;
+import com.hankcs.hanlp.corpus.document.sentence.word.Word;
+
 import java.io.*;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import static com.hankcs.hanlp.dictionary.other.CharType.*;
 
 /**
  * 文本工具类
  */
 public class TextUtility
 {
-
-    /**
-     * 单字节
-     */
-    public static final int CT_SINGLE = 5;// SINGLE byte
-
-    /**
-     * 分隔符"!,.?()[]{}+=
-     */
-    public static final int CT_DELIMITER = CT_SINGLE + 1;// delimiter
-
-    /**
-     * 中文字符
-     */
-    public static final int CT_CHINESE = CT_SINGLE + 2;// Chinese Char
-
-    /**
-     * 字母
-     */
-    public static final int CT_LETTER = CT_SINGLE + 3;// HanYu Pinyin
-
-    /**
-     * 数字
-     */
-    public static final int CT_NUM = CT_SINGLE + 4;// HanYu Pinyin
-
-    /**
-     * 序号
-     */
-    public static final int CT_INDEX = CT_SINGLE + 5;// HanYu Pinyin
-
-    /**
-     * 中文数字
-     */
-    public static final int CT_CNUM = CT_SINGLE + 6;
-
-    /**
-     * 其他
-     */
-    public static final int CT_OTHER = CT_SINGLE + 12;// Other
 
     public static int charType(char c)
     {
@@ -64,7 +32,7 @@ public class TextUtility
     {
         if (str != null && str.length() > 0)
         {
-            if ("零○〇一二两三四五六七八九十廿百千万亿壹贰叁肆伍陆柒捌玖拾佰仟".contains(str)) return CT_CNUM;
+            if (Predefine.CHINESE_NUMBERS.contains(str)) return CT_CNUM;
             byte[] b;
             try
             {
@@ -195,7 +163,7 @@ public class TextUtility
         while (i < str.length() && "０１２３４５６７８９".indexOf(str.charAt(i)) != -1)
             i++;
         // Get middle delimiter such as .
-        if (i < str.length())
+        if (i > 0 && i < str.length())
         {
             char ch = str.charAt(i);
             if ("·∶:，,．.／/".indexOf(ch) != -1)
@@ -212,7 +180,7 @@ public class TextUtility
         while (i < str.length() && "0123456789".indexOf(str.charAt(i)) != -1)
             i++;
         // Get middle delimiter such as .
-        if (i < str.length())
+        if (i > 0 && i < str.length())
         {
             char ch = str.charAt(i);
             if (',' == ch || '.' == ch || '/' == ch  || ':' == ch || "∶·，．／".indexOf(ch) != -1)
@@ -699,6 +667,47 @@ public class TextUtility
         for (String str : stringCollection)
         {
             sb.append(str).append(delimiter);
+        }
+
+        return sb.toString();
+    }
+
+    public static String combine(String... termArray)
+    {
+        StringBuilder sbSentence = new StringBuilder();
+        for (String word : termArray)
+        {
+            sbSentence.append(word);
+        }
+        return sbSentence.toString();
+    }
+
+    public static String join(Iterable<? extends CharSequence> s, String delimiter)
+    {
+        Iterator<? extends CharSequence> iter = s.iterator();
+        if (!iter.hasNext()) return "";
+        StringBuilder buffer = new StringBuilder(iter.next());
+        while (iter.hasNext()) buffer.append(delimiter).append(iter.next());
+        return buffer.toString();
+    }
+
+    public static String combine(Sentence sentence)
+    {
+        StringBuilder sb = new StringBuilder(sentence.wordList.size() * 3);
+        for (IWord word : sentence.wordList)
+        {
+            sb.append(word.getValue());
+        }
+
+        return sb.toString();
+    }
+
+    public static String combine(List<Word> wordList)
+    {
+        StringBuilder sb = new StringBuilder(wordList.size() * 3);
+        for (IWord word : wordList)
+        {
+            sb.append(word.getValue());
         }
 
         return sb.toString();

@@ -30,7 +30,7 @@ public class NotionalTokenizer
     /**
      * 预置分词器
      */
-    static final Segment SEGMENT = HanLP.newSegment();
+    public static Segment SEGMENT = HanLP.newSegment();
 
     public static List<Term> segment(String text)
     {
@@ -80,6 +80,18 @@ public class NotionalTokenizer
         }
 
         return sentenceList;
+    }
+
+    /**
+     * 分词断句 输出句子形式
+     *
+     * @param text     待分词句子
+     * @param shortest 是否断句为最细的子句（将逗号也视作分隔符）
+     * @return 句子列表，每个句子由一个单词列表组成
+     */
+    public static List<List<Term>> seg2sentence(String text, boolean shortest)
+    {
+        return SEGMENT.seg2sentence(text, shortest);
     }
 
     /**

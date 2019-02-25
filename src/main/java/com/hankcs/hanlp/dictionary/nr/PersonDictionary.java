@@ -56,8 +56,7 @@ public class PersonDictionary
         dictionary = new NRDictionary();
         if (!dictionary.load(HanLP.Config.PersonDictionaryPath))
         {
-            logger.severe("人名词典加载失败：" + HanLP.Config.PersonDictionaryPath);
-            System.exit(-1);
+            throw new IllegalArgumentException("人名词典加载失败：" + HanLP.Config.PersonDictionaryPath);
         }
         transformMatrixDictionary = new TransformMatrixDictionary<NR>(NR.class);
         transformMatrixDictionary.load(HanLP.Config.PersonDictionaryTrPath);
@@ -129,11 +128,11 @@ public class PersonDictionary
                     sbPattern.append(NR.L.toString());
                     // 对串也做一些修改
                     listIterator.previous();
-                    String nowED = current.realWord.substring(current.realWord.length() - 1);
-                    String nowL = current.realWord.substring(0, current.realWord.length() - 1);
-                    listIterator.set(new Vertex(nowED));
-                    listIterator.add(new Vertex(nowL));
+                    String EorD = current.realWord.substring(0, 1);
+                    String L = current.realWord.substring(1, current.realWord.length());
+                    listIterator.set(new Vertex(EorD));
                     listIterator.next();
+                    listIterator.add(new Vertex(L));
                     continue;
                 default:
                     sbPattern.append(nr.toString());

@@ -12,7 +12,6 @@
 package com.hankcs.hanlp.utility;
 
 import com.hankcs.hanlp.corpus.tag.Nature;
-import com.hankcs.hanlp.corpus.util.CustomNatureUtility;
 import com.hankcs.hanlp.dictionary.CoreDictionary;
 import com.hankcs.hanlp.dictionary.CustomDictionary;
 import com.hankcs.hanlp.seg.common.Term;
@@ -38,6 +37,16 @@ public class LexiconUtility
         CoreDictionary.Attribute attribute = CoreDictionary.get(word);
         if (attribute != null) return attribute;
         return CustomDictionary.get(word);
+    }
+
+    /**
+     * 词库是否收录了词语（查询核心词典和用户词典）
+     * @param word
+     * @return
+     */
+    public static boolean contains(String word)
+    {
+        return getAttribute(word) != null;
     }
 
     /**
@@ -139,16 +148,13 @@ public class LexiconUtility
      */
     public static Nature convertStringToNature(String name, LinkedHashSet<Nature> customNatureCollector)
     {
-        try
+        Nature nature = Nature.fromString(name);
+        if (nature == null)
         {
-            return Nature.valueOf(name);
-        }
-        catch (Exception e)
-        {
-            Nature nature = CustomNatureUtility.addNature(name);
+            nature = Nature.create(name);
             if (customNatureCollector != null) customNatureCollector.add(nature);
-            return nature;
         }
+        return nature;
     }
 
     /**

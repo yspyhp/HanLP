@@ -50,6 +50,17 @@ public abstract class BaseNode<V> implements Comparable<BaseNode>
      */
     protected V value;
 
+    public BaseNode<V> transition(String path, int begin)
+    {
+        BaseNode<V> cur = this;
+        for (int i = begin; i < path.length(); ++i)
+        {
+            cur = cur.getChild(path.charAt(i));
+            if (cur == null || cur.status == Status.UNDEFINED_0) return null;
+        }
+        return cur;
+    }
+
     public BaseNode<V> transition(char[] path, int begin)
     {
         BaseNode<V> cur = this;
@@ -58,6 +69,19 @@ public abstract class BaseNode<V> implements Comparable<BaseNode>
             cur = cur.getChild(path[i]);
             if (cur == null || cur.status == Status.UNDEFINED_0) return null;
         }
+        return cur;
+    }
+
+    /**
+     * 转移状态
+     * @param path
+     * @return
+     */
+    public BaseNode<V> transition(char path)
+    {
+        BaseNode<V> cur = this;
+        cur = cur.getChild(path);
+        if (cur == null || cur.status == Status.UNDEFINED_0) return null;
         return cur;
     }
 
@@ -262,6 +286,14 @@ public abstract class BaseNode<V> implements Comparable<BaseNode>
     @Override
     public String toString()
     {
+        if (child == null)
+        {
+            return "BaseNode{" + 
+                     "status=" + status +
+                     ", c=" + c +
+                     ", value=" + value +
+                    '}';
+        }
         return "BaseNode{" +
                 "child=" + child.length +
                 ", status=" + status +
